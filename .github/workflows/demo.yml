@@ -9,7 +9,7 @@ jobs:
     steps:
       - name: Get code
         uses: actions/checkout@v4
-      - name: Cache dependencies
+      - name: Cache dependencies #Cache node modules for faster builds(Re-use)
         uses: actions/cache@v3
         with:
           path: ~/.npm
@@ -23,12 +23,12 @@ jobs:
   build:
     needs: test
     runs-on: ubuntu-latest
-    outputs:
+    outputs: #Define an output variable for the generated JS filename that the deploy job can access
       script-file: ${{ steps.publish.outputs.script-file }}
     steps:
       - name: Get code
         uses: actions/checkout@v4
-      - name: Cache dependencies
+      - name: Cache dependencies #Cache node modules for faster builds(Re-use)
         uses: actions/cache@v3
         with:
           path: ~/.npm
@@ -37,7 +37,7 @@ jobs:
         run: npm ci
       - name: Build website
         run: npm run build
-      - name: Publish JS filename
+      - name: Publish JS filename #Publish the generated JS filename as an output variable for the deploy job to use
         id: publish
         run: find dist/assets/*.js -type f -execdir echo 'script-file={}' >> $GITHUB_OUTPUT ';'
       - name: Upload Artifact
@@ -49,13 +49,13 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - name: Get build artifacts
+      - name: Get build artifacts #Download Artifacts
         uses: actions/download-artifact@v4
         with:
           name: dist-files
       - name: Output contents
         run: ls
-      - name: Output filename
+      - name: Output filename #Output the generated JS filename from the build job to verify that the output variable is being passed correctly between jobs
         run: echo "${{ needs.build.outputs.script-file }}"
       - name: Deploy
         run: echo "Deploying..."
